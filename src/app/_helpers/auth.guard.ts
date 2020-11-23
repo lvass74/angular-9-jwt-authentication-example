@@ -2,6 +2,7 @@
 import { Router, CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
 import { AuthenticationService } from '@app/_services';
+import { map, skip, skipWhile } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class AuthGuard implements CanActivate {
@@ -11,14 +12,19 @@ export class AuthGuard implements CanActivate {
     ) { }
 
     canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
-        const currentUser = this.authenticationService.currentUserValue;
-        if (currentUser) {
-            // logged in so return true
-            return true;
-        }
+        return this.authenticationService.currentUser
+        .pipe(skipWhile(value => value === undefined))
+        .pipe(
+            map(currentUser => {
+                if (currentUser) {
+                    // logged in so return true
+                    return true;
+                }
 
-        // not logged in so redirect to login page with the return url
-        this.router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
-        return false;
+                // not logged in so redirect to login page with the return url
+                this.router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
+                return false;
+            })
+        )
     }
 }

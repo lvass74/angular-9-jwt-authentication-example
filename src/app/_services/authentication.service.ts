@@ -12,19 +12,31 @@ export class AuthenticationService {
     public currentUser: Observable<User>;
 
     constructor(private http: HttpClient) {
-        this.currentUserSubject = new BehaviorSubject<User>(JSON.parse(localStorage.getItem('currentUser')));
-        this.currentUser = this.currentUserSubject.asObservable();
+        this.currentUserSubject = new BehaviorSubject<User>(undefined)
+        this.currentUser = this.currentUserSubject.asObservable()
     }
 
     public get currentUserValue(): User {
         return this.currentUserSubject.value;
     }
 
+    refreshAuthentication() {
+        this.http.post<any>(`${environment.apiUrl}/users/refresh_authentication`, null, { withCredentials: true })
+        .subscribe(
+            user => {
+                this.currentUserSubject.next(user)
+            },
+            error => {
+                this.currentUserSubject.next(null)
+                console.log('Refresh failed with error', error)
+
+            }
+        );
+    }
+
     login(username: string, password: string) {
-        return this.http.post<any>(`${environment.apiUrl}/users/authenticate`, { username, password })
+        return this.http.post<any>(`${environment.apiUrl}/users/authenticate`, { username, password }, { withCredentials: true })
             .pipe(map(user => {
-                // store user details and jwt token in local storage to keep user logged in between page refreshes
-                localStorage.setItem('currentUser', JSON.stringify(user));
                 this.currentUserSubject.next(user);
                 return user;
             }));
@@ -32,7 +44,6 @@ export class AuthenticationService {
 
     logout() {
         // remove user from local storage to log user out
-        localStorage.removeItem('currentUser');
         this.currentUserSubject.next(null);
     }
 }
