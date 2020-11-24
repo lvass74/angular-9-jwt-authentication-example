@@ -4,6 +4,7 @@ import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { AuthenticationService } from '@app/_services';
+import { environment } from '@environments/environment';
 
 @Injectable()
 export class ErrorInterceptor implements HttpInterceptor {
@@ -11,13 +12,13 @@ export class ErrorInterceptor implements HttpInterceptor {
 
     intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
         return next.handle(request).pipe(catchError(err => {
-            if (err.status === 401) {
+            if (err.status === 401 && request.url != `${environment.apiUrl}/users/authenticate`) {
                 // auto logout if 401 response returned from api
                 this.authenticationService.logout();
                 location.reload(true);
             }
 
-            const error = err.error.message || err.statusText;
+            const error = err.error.error || err.statusText;
             return throwError(error);
         }))
     }

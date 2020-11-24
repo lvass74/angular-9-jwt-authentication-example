@@ -12,9 +12,6 @@ export class JwtInterceptor implements HttpInterceptor {
      }
 
     intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-        // don't add JWT token header to refresh request
-        if (request.url.includes('users/refresh_authentication')) return next.handle(request)
-        
         // add auth header with jwt if user is logged in and request is to the api url
         const currentUser = this.authenticationService.currentUserValue;
         const isLoggedIn = currentUser && currentUser.token;
